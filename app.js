@@ -966,10 +966,8 @@ const OPENINGS = {
     $("botName").textContent = CONFIG.BOT_NAME;
     document.querySelectorAll(".bot-name-inline").forEach((e) => (e.textContent = CONFIG.BOT_NAME));
     const img = $("botAvatar");
-    img.onerror = () => {
-      img.hidden = true;
-      $("botAvatarFallback").hidden = false;
-    };
+    // Se a foto não carregar, mostra apenas um círculo neutro (sem emoji nem texto)
+    img.onerror = () => $("avatarWrap").classList.add("no-photo");
     img.src = CONFIG.BOT_AVATAR;
   }
 
