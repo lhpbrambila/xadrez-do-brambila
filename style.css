@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   --bg: #1e1b16;
   --card: #2a2620;
   --text: #f1ebe0;
@@ -88,9 +89,15 @@ body {
   border: .09em solid rgba(20, 20, 20, .32); pointer-events: none;
 }
 
-.piece { position: relative; z-index: 1; font-variant-emoji: text; }
-.piece.w { color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000, 0 1px 1px #000; }
-.piece.b { color: #111; text-shadow: 0 0 2px rgba(255, 255, 255, .45); }
+.piece { position: relative; z-index: 1; font-variant-emoji: text; forced-color-adjust: none; }
+.piece.w {
+  color: #fff; -webkit-text-fill-color: #fff;
+  text-shadow: 0 0 2px #000, 0 0 2px #000, 0 1px 1px #000;
+}
+.piece.b {
+  color: #000; -webkit-text-fill-color: #000;
+  text-shadow: 0 0 1px rgba(255, 255, 255, .6), 0 0 3px rgba(255, 255, 255, .35);
+}
 
 .coord {
   position: absolute; font-size: calc(var(--board-size) / 8 * .17); font-weight: 700;
@@ -162,8 +169,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   font-size: 2.2rem; line-height: 1; padding: 8px 0; border: 0; border-radius: 10px;
   background: var(--light); cursor: pointer; font-variant-emoji: text;
 }
-.promo button.w { color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000; }
-.promo button.b { color: #111; }
+.promo button { forced-color-adjust: none; }
+.promo button.w { color: #fff; -webkit-text-fill-color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000; }
+.promo button.b { color: #000; -webkit-text-fill-color: #000; }
 
 /* Desktop */
 @media (min-width: 900px) {
