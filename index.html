@@ -12,23 +12,41 @@
 <body>
   <div class="app">
     <header class="bot-bar">
-      <div class="avatar-wrap">
+      <div id="avatarWrap" class="avatar-wrap">
         <img id="botAvatar" alt="Avatar do bot" class="avatar">
         <span id="botAvatarFallback" class="avatar-fallback" hidden>🐶</span>
       </div>
-      <div class="bot-info">
-        <h1 id="botName">Brambila</h1>
-        <p id="botElo">ELO 1200</p>
-      </div>
-      <div id="thinking" class="thinking" hidden>
-        <span></span><span></span><span></span>
+      <div class="bot-main">
+        <div class="bot-top">
+          <h1 id="botName">Brambila</h1>
+          <span id="botElo" class="elo">ELO 1200</span>
+          <div id="thinking" class="thinking" hidden><span></span><span></span><span></span></div>
+        </div>
+        <div id="bubble" class="bubble" aria-live="polite"></div>
       </div>
     </header>
 
     <main class="layout">
       <section class="board-area">
-        <div id="board" class="board" role="grid" aria-label="Tabuleiro de xadrez"></div>
-        <div class="player-bar">
+        <div class="strip">
+          <div id="capTop" class="cap"></div>
+          <div id="clockTop" class="clock" hidden>5:00</div>
+        </div>
+
+        <div class="board-wrap">
+          <div id="evalBar" class="evalbar" title="Barra de avaliação (quem está melhor)">
+            <div id="evalFill" class="eval-fill"></div>
+            <span id="evalText" class="eval-text">0.0</span>
+          </div>
+          <div id="board" class="board" role="grid" aria-label="Tabuleiro de xadrez"></div>
+        </div>
+
+        <div class="strip">
+          <div id="capBottom" class="cap"></div>
+          <div id="clockBottom" class="clock" hidden>5:00</div>
+        </div>
+
+        <div class="strip info">
           <span id="playerLabel">Você</span>
           <span id="statusText" class="status">Carregando o motor de xadrez…</span>
         </div>
@@ -37,9 +55,24 @@
       <aside class="side">
         <div class="controls">
           <button id="btnNew" class="btn primary">Nova partida</button>
+          <button id="btnHint" class="btn hint">Dica</button>
           <button id="btnUndo" class="btn">Desfazer</button>
+          <button id="btnPgn" class="btn">PGN</button>
           <button id="btnResign" class="btn danger">Desistir</button>
         </div>
+
+        <div class="score-card">
+          <div class="score-head">
+            <h2>Placar contra o <span class="bot-name-inline">Brambila</span></h2>
+            <button id="btnResetScore" class="link-btn" title="Zerar o placar">zerar</button>
+          </div>
+          <div class="score-row">
+            <div><strong id="scoreW">0</strong><span>Vitórias</span></div>
+            <div><strong id="scoreD">0</strong><span>Empates</span></div>
+            <div><strong id="scoreL">0</strong><span>Derrotas</span></div>
+          </div>
+        </div>
+
         <div class="moves-card">
           <h2>Lances</h2>
           <ol id="moves" class="moves"></ol>
@@ -74,7 +107,23 @@
         <p id="eloLabel" class="muted"></p>
       </div>
 
+      <div class="field">
+        <label for="clockSelect">Relógio</label>
+        <select id="clockSelect">
+          <option value="none" selected>Sem relógio</option>
+          <option value="3|0">3 min</option>
+          <option value="5|0">5 min</option>
+          <option value="5|3">5 min + 3 s por lance</option>
+          <option value="10|0">10 min</option>
+          <option value="10|5">10 min + 5 s por lance</option>
+          <option value="15|10">15 min + 10 s por lance</option>
+          <option value="30|0">30 min</option>
+        </select>
+        <p class="muted">Com relógio ligado, o botão "Desfazer" fica desativado.</p>
+      </div>
+
       <button id="btnStart" class="btn primary big" disabled>Carregando motor…</button>
+      <button id="btnCancel" class="btn big" hidden>Voltar à partida</button>
     </div>
   </div>
 
@@ -83,6 +132,25 @@
     <div class="modal-box small">
       <h2>Promover peão para:</h2>
       <div id="promoChoices" class="promo"></div>
+    </div>
+  </div>
+
+  <!-- Janela: PGN -->
+  <div id="pgnModal" class="modal" hidden>
+    <div class="modal-box">
+      <h2>Exportar partida (PGN)</h2>
+      <p class="muted">Copie e cole em um site de análise.</p>
+      <textarea id="pgnText" readonly rows="9" spellcheck="false"></textarea>
+      <div class="pgn-actions">
+        <button id="pgnCopy" class="btn primary">Copiar</button>
+        <button id="pgnDownload" class="btn">Baixar .pgn</button>
+      </div>
+      <div class="pgn-links">
+        <a href="https://lichess.org/paste" target="_blank" rel="noopener">Abrir Lichess ↗</a>
+        <a href="https://www.chess.com/analysis" target="_blank" rel="noopener">Abrir Chess.com ↗</a>
+      </div>
+      <p id="pgnMsg" class="muted" aria-live="polite"></p>
+      <button id="pgnClose" class="btn big">Fechar</button>
     </div>
   </div>
 

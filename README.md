@@ -1,36 +1,52 @@
 # Xadrez contra o Brambila ♟️
 
-Página de xadrez para jogar contra um bot (Stockfish.js), com escolha de cor e nível de ELO (800 a 2800). Funciona no celular e no computador.
+Página de xadrez para jogar contra um bot (Stockfish.js), com escolha de cor, nível de ELO (800 a 2800) e relógio opcional. Funciona no celular e no computador.
+
+## Recursos
+
+- Escolha de cor (brancas, pretas ou sorteio) e ELO de 800 a 2800
+- **Dica** com o melhor lance segundo o motor (casas em azul)
+- **Barra de avaliação** ao lado do tabuleiro (branco = brancas melhor, preto = pretas melhor)
+- **Relógio** opcional (3, 5, 10, 15, 30 min, com ou sem acréscimo por lance)
+- **Peças em SVG** (iguais em qualquer navegador)
+- **Brambila com personalidade**: balão de fala (provoca, elogia, comenta aberturas) e reação no avatar
+- **Exportar PGN** (copiar ou baixar) para analisar no Lichess ou Chess.com
+- **Placar** de vitórias/empates/derrotas, salvo no navegador
+- **Material capturado** ao lado do tabuleiro, com a vantagem de material
 
 ## Arquivos
 
 - `index.html` – estrutura da página
 - `style.css` – visual (responsivo)
-- `app.js` – lógica do jogo e integração com o motor
-- `avatar.jpg` – foto do bot (**você precisa adicionar este arquivo**)
+- `app.js` – lógica do jogo, motor, frases, relógio, PGN e placar
+- `avatar.jpg` – foto do bot
 
 ## Como publicar no GitHub Pages
 
 1. Crie um repositório no GitHub (ex.: `xadrez-brambila`).
-2. Envie todos os arquivos desta pasta, incluindo `avatar.jpg`, para a raiz do repositório.
+2. Envie todos os arquivos, incluindo `avatar.jpg`, para a raiz do repositório.
 3. Vá em **Settings → Pages**.
-4. Em **Build and deployment**, escolha **Deploy from a branch**, selecione a branch `main` e a pasta `/ (root)`, e clique em **Save**.
-5. Após cerca de 1 minuto, o site estará em `https://SEU-USUARIO.github.io/xadrez-brambila/`.
+4. Em **Build and deployment**, escolha **Deploy from a branch**, branch `main`, pasta `/ (root)`, e clique em **Save**.
+5. Após cerca de 1 minuto, o site estará em `https://SEU-USUARIO.github.io/NOME-DO-REPO/`.
 
-## Como trocar a foto do Brambila
+## Como personalizar
 
-- **Jeito mais simples:** substitua o arquivo `avatar.jpg` por outra imagem com o mesmo nome (de preferência quadrada).
-- **Outro nome/formato:** abra `app.js` e, no topo, altere a linha `BOT_AVATAR: "avatar.jpg"` (ex.: `"minha-foto.png"`).
+Tudo no topo do `app.js`:
 
-Se a imagem não for encontrada, aparece um emoji 🐶 no lugar.
-
-## Como mudar o nome do bot
-
-No topo do `app.js`, altere `BOT_NAME: "Brambila"`.
+- **Foto do Brambila:** substitua o arquivo `avatar.jpg` (mesmo nome) ou mude `BOT_AVATAR` em `CONFIG`.
+- **Nome do bot:** mude `BOT_NAME` em `CONFIG`.
+- **Frases do bot:** edite o objeto `PHRASES` (adicione, remova ou troque frases).
+- **Comentários de abertura:** edite o objeto `OPENINGS` (sequência de lances → comentário).
 
 ## Sobre os níveis de ELO
 
-O Stockfish.js 10 não possui limitação de ELO nativa, então o nível é simulado combinando: nível de habilidade (Skill Level), profundidade e tempo de análise, além de uma chance de "erro humano" nos níveis mais baixos. Os valores são aproximados e podem ser ajustados na função `levelFor` do `app.js`.
+O Stockfish.js 10 não possui limitação de ELO nativa, então o nível é simulado combinando nível de habilidade (Skill Level), profundidade e tempo de análise, além de uma chance de "erro humano" nos níveis mais baixos. Os valores são aproximados e podem ser ajustados na função `levelFor` do `app.js`.
+
+## Observações
+
+- O botão **Desfazer** fica desativado quando o relógio está ligado.
+- A dica e a barra de avaliação usam uma análise rápida do motor, então podem variar um pouco entre uma jogada e outra.
+- O placar fica salvo apenas no navegador/dispositivo em que você joga.
 
 ## Bibliotecas (carregadas por CDN, precisa de internet)
 
