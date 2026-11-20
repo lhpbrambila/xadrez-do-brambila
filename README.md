@@ -13,12 +13,14 @@ Página de xadrez para jogar contra um bot (Stockfish.js), com escolha de cor, n
 - **Exportar PGN** (copiar ou baixar) para analisar no Lichess ou Chess.com
 - **Placar** de vitórias/empates/derrotas, salvo no navegador
 - **Material capturado** ao lado do tabuleiro, com a vantagem de material
+- **Análise pós-jogo** (botão **Analisar**): classifica cada lance como Brilhante (!!), Ótimo (!), Melhor, Excelente, Bom, Teoria, Imprecisão (?!), Erro (?) ou Erro grave (??); mostra a precisão de cada lado, gráfico de avaliação, tabuleiro com setas (seu lance e o melhor lance), lista de lances clicável e atalhos "Seu erro ◀ ▶"
 
 ## Arquivos
 
 - `index.html` – estrutura da página
 - `style.css` – visual (responsivo)
 - `app.js` – lógica do jogo, motor, frases, relógio, PGN e placar
+- `analysis.js` – análise pós-jogo (classificação dos lances e tela de revisão)
 - `avatar.jpg` – foto do bot
 
 ## Como publicar no GitHub Pages
@@ -41,6 +43,13 @@ Tudo no topo do `app.js`:
 ## Sobre os níveis de ELO
 
 O Stockfish.js 10 não possui limitação de ELO nativa, então o nível é simulado combinando nível de habilidade (Skill Level), profundidade e tempo de análise, além de uma chance de "erro humano" nos níveis mais baixos. Os valores são aproximados e podem ser ajustados na função `levelFor` do `app.js`.
+
+## Análise pós-jogo
+
+- Fica disponível para a **última partida terminada** (também depois de recarregar a página).
+- Cada posição é avaliada pelo Stockfish com as 2 melhores linhas (cerca de 30 s a 1 min no celular). O botão "Análise mais profunda" refaz com mais tempo por posição.
+- Os limites de classificação (perda de chance de vitória: Imprecisão ≥ 10%, Erro ≥ 20%, Erro grave ≥ 30%) e o tempo por posição ficam em `analysis.js` (`classifyAll` e `QUALITY`).
+- Brilhante = sacrifício de material que o motor aprova; Ótimo = lance praticamente único; Teoria = lances de aberturas listadas em `OPENINGS` no `app.js`.
 
 ## Observações
 

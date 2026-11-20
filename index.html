@@ -58,6 +58,7 @@
           <button id="btnUndo" class="btn">Desfazer</button>
           <button id="btnPgn" class="btn">PGN</button>
           <button id="btnResign" class="btn danger">Desistir</button>
+          <button id="btnAnalyze" class="btn analyze" disabled title="Analisar a última partida terminada">Analisar</button>
         </div>
 
         <div class="score-card">
@@ -153,7 +154,74 @@
     </div>
   </div>
 
+  <!-- Janela: análise pós-jogo -->
+  <div id="analysisModal" class="modal analysis" hidden>
+    <div id="anBox" class="an-box">
+      <div class="an-head">
+        <div>
+          <h2>Análise da partida</h2>
+          <div id="anMeta" class="muted"></div>
+        </div>
+        <button id="anClose" class="btn">Fechar ✕</button>
+      </div>
+
+      <div id="anLoading" class="an-loading">
+        <p id="anLoadText">Preparando o motor…</p>
+        <div class="progress"><div id="anProg"></div></div>
+        <button id="anCancel" class="btn">Cancelar</button>
+      </div>
+
+      <div id="anContent" hidden>
+        <p id="anSay" class="an-say"></p>
+
+        <div class="an-grid">
+          <div class="an-card an-summary" id="anSummary"></div>
+
+          <div class="an-card an-graphcard">
+            <h3>Avaliação ao longo da partida</h3>
+            <div id="anGraph" class="an-graph"></div>
+            <div class="graph-legend"><span>Branco = brancas melhor</span><span>Toque para ir ao lance</span></div>
+          </div>
+
+          <div class="an-boardcol">
+            <div class="board-wrap">
+              <div class="evalbar">
+                <div id="anEvalFill" class="eval-fill"></div>
+                <span id="anEvalText" class="eval-text">0.0</span>
+              </div>
+              <div class="an-stack">
+                <div id="anBoard" class="board an-board" aria-label="Tabuleiro da análise"></div>
+                <svg id="anArrows" class="an-arrows" viewBox="0 0 80 80" aria-hidden="true"></svg>
+              </div>
+            </div>
+
+            <div class="an-nav">
+              <button id="anFirst" class="btn" aria-label="Início">|◀</button>
+              <button id="anPrev" class="btn" aria-label="Lance anterior">◀</button>
+              <button id="anNext" class="btn" aria-label="Próximo lance">▶</button>
+              <button id="anLast" class="btn" aria-label="Fim">▶|</button>
+            </div>
+            <div class="an-nav three">
+              <button id="anPrevErr" class="btn">◀ Seu erro</button>
+              <button id="anNextErr" class="btn">Seu erro ▶</button>
+              <button id="anFlip" class="btn">⇅ Girar</button>
+            </div>
+
+            <div id="anDetail" class="an-card an-detail"></div>
+          </div>
+
+          <div class="an-card an-movescard">
+            <h3>Lances</h3>
+            <div id="anMoves" class="an-moves"></div>
+            <button id="anDeep" class="btn deep">Análise mais profunda (~1 min)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
   <script src="app.js"></script>
+  <script src="analysis.js"></script>
 </body>
 </html>

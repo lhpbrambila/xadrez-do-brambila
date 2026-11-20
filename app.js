@@ -48,6 +48,10 @@ const PHRASES = {
   draw: ["Empate! Respeito você. 🤝", "Ninguém ganhou… mas eu quase ganhei."],
   hint: ["Pedindo dica pra mim? Tá bom, eu ajudo. 🐾", "Colando, hein? Tudo bem, só dessa vez."],
   undo: ["Voltando no tempo? Sem problemas. ⏪"],
+  analysisPro: ["Que precisão! Quem é você e o que fez com o jogador? 😳", "Isso foi jogo de mestre. Respeito!"],
+  analysisWin: ["Você jogou melhor que eu desta vez… mas não se acostume. 😤", "Tá bom, você foi mais preciso. Quero revanche!"],
+  analysisEven: ["Partida equilibrada! Foi por pouco. 🤝", "Empatados em precisão. Quem vai desempatar?"],
+  analysisLose: ["Eu joguei melhor, mas todo mundo erra. Olha os seus erros aí! 😏", "Dá uma olhada nos lances marcados em vermelho. Aprender é metade da vitória."],
 };
 
 /* Comentários sobre aberturas (sequência de lances em SAN) */
@@ -149,6 +153,28 @@ const OPENINGS = {
   let hintMove = null, hintFen = null, hintShown = null, hintWanted = false;
   let lastBotMat = 0;
 
+  let engineBlobUrl = null;
+  let enginePromise = null;
+  let lastGame = null; // última partida terminada (usada pela análise pós-jogo)
+  const LAST_GAME_KEY = "brambila-ultima-partida-v1";
+
+  function saveLastGame() {
+    const moves = game.history({ verbose: true }).map((m) => ({
+      from: m.from,
+      to: m.to,
+      promotion: m.promotion || null,
+    }));
+    lastGame = { moves, playerColor, elo, winner: gameWinner };
+    try { localStorage.setItem(LAST_GAME_KEY, JSON.stringify(lastGame)); } catch (e) {}
+  }
+
+  function loadLastGame() {
+    try {
+      const g = JSON.parse(localStorage.getItem(LAST_GAME_KEY));
+      if (g && Array.isArray(g.moves) && g.moves.length && (g.playerColor === "w" || g.playerColor === "b")) lastGame = g;
+    } catch (e) {}
+  }
+
   const clock = { on: false, w: 0, b: 0, inc: 0, last: 0, timer: null };
 
   /* ==========================================================
@@ -167,7 +193,8 @@ const OPENINGS = {
       })
       .then((code) => {
         const blob = new Blob([code], { type: "application/javascript" });
-        engine = new Worker(URL.createObjectURL(blob));
+        engineBlobUrl = URL.createObjectURL(blob);
+        engine = new Worker(engineBlobUrl);
         return new Promise((resolve) => {
           engine.onmessage = (e) => {
             const line = String(e.data);
@@ -341,25 +368,26 @@ const OPENINGS = {
     updateEvalBar();
   }
 
-  function updateEvalBar() {
-    const s = evalScore == null ? 0 : evalScore;
+  /* Pinta uma barra de avaliação (usada no jogo e na análise). score = centipeões, ponto de vista das brancas */
+  function paintEvalBar(fill, text, score, flipped) {
+    const s = score == null ? 0 : score;
     let pct;
     if (Math.abs(s) >= MATE - 500) pct = s > 0 ? 100 : 0;
     else pct = 100 / (1 + Math.exp(-s / 350));
-    const fill = $("evalFill");
-    const flipped = playerColor === "b"; // brancas ficam em cima quando o tabuleiro está invertido
     fill.style.height = pct + "%";
-    fill.style.top = flipped ? "0" : "auto";
+    fill.style.top = flipped ? "0" : "auto"; // brancas ficam em cima quando o tabuleiro está invertido
     fill.style.bottom = flipped ? "auto" : "0";
 
-    const text = $("evalText");
-    text.textContent = fmtScore(evalScore);
+    text.textContent = fmtScore(score);
     const whiteWinning = s >= 0;
-    const whiteAtBottom = !flipped;
-    const atBottom = whiteWinning === whiteAtBottom;
+    const atBottom = whiteWinning === !flipped;
     text.style.top = atBottom ? "auto" : "4px";
     text.style.bottom = atBottom ? "4px" : "auto";
     text.style.color = whiteWinning ? "#1b1b1b" : "#f2f2f2";
+  }
+
+  function updateEvalBar() {
+    paintEvalBar($("evalFill"), $("evalText"), evalScore, playerColor === "b");
   }
 
   async function analysisForPlayer() {
@@ -519,6 +547,7 @@ const OPENINGS = {
     hintMove = hintFen = null;
     hintWanted = false;
     preEval = preEvalFen = null;
+    $("btnAnalyze").classList.remove("pulse");
     reactAvatar(null);
 
     const choice = document.querySelector('input[name="color"]:checked').value;
@@ -708,6 +737,13 @@ const OPENINGS = {
     $("statusText").textContent = texts[winner + ":" + reason] || "Fim de jogo.";
 
     recordResult(winner);
+
+    if (game.history().length) {
+      saveLastGame();
+      const bA = $("btnAnalyze");
+      bA.disabled = false;
+      bA.classList.add("pulse");
+    }
 
     if (winner === "player") {
       reactAvatar("lose", true);
@@ -999,6 +1035,10 @@ const OPENINGS = {
     $("btnHint").addEventListener("click", onHint);
     $("btnResign").addEventListener("click", resign);
     $("btnPgn").addEventListener("click", openPgn);
+    $("btnAnalyze").addEventListener("click", () => {
+      $("btnAnalyze").classList.remove("pulse");
+      if (window.BrambilaAnalysis) window.BrambilaAnalysis.open();
+    });
     $("pgnClose").addEventListener("click", () => ($("pgnModal").hidden = true));
     $("pgnCopy").addEventListener("click", copyPgn);
     $("pgnDownload").addEventListener("click", downloadPgn);
@@ -1011,7 +1051,11 @@ const OPENINGS = {
 
     $("setupModal").hidden = false;
 
-    initEngine()
+    loadLastGame();
+    $("btnAnalyze").disabled = !lastGame;
+
+    enginePromise = initEngine();
+    enginePromise
       .then(() => {
         engineReady = true;
         $("btnStart").disabled = false;
@@ -1024,6 +1068,24 @@ const OPENINGS = {
         $("statusText").textContent = "Não foi possível carregar o Stockfish. Verifique sua conexão e recarregue.";
       });
   }
+
+  /* API usada pelo analysis.js */
+  window.Brambila = {
+    CONFIG,
+    PHRASES,
+    OPENINGS,
+    MATE,
+    pieceSVG,
+    fmtScore,
+    paintEvalBar,
+    getLastGame: () => lastGame,
+    getEngineUrl: () => engineBlobUrl,
+    whenEngineReady: () => enginePromise || Promise.reject(new Error("Motor não iniciado")),
+    pause: () => stopClock(),
+    resume: () => {
+      if (started && !over) startClock();
+    },
+  };
 
   init();
 })();
