@@ -49,7 +49,7 @@ O Stockfish.js 10 não possui limitação de ELO nativa, então o nível é simu
 - Fica disponível para a **última partida terminada** (também depois de recarregar a página).
 - Cada posição é avaliada pelo Stockfish com as 2 melhores linhas (cerca de 30 s a 1 min no celular). O botão "Análise mais profunda" refaz com mais tempo por posição.
 - Os limites de classificação (perda de chance de vitória: Imprecisão ≥ 10%, Erro ≥ 20%, Erro grave ≥ 30%) e o tempo por posição ficam em `analysis.js` (`classifyAll` e `QUALITY`).
-- Brilhante = sacrifício de material que o motor aprova; Ótimo = lance praticamente único; Teoria = lances de aberturas listadas em `OPENINGS` no `app.js`.
+- **Brilhante** só é dado a um sacrifício real: a peça que acabou de se mover é capturada na linha do motor e, depois de resolvidas as trocas seguintes, o jogador fica pelo menos 2 pontos de material atrás, e mesmo assim a posição se mantém. Roque, promoção e trocas equilibradas nunca contam. **Ótimo** = lance praticamente único; **Teoria** = lances de aberturas listadas em `OPENINGS` no `app.js`.
 
 ## Observações
 

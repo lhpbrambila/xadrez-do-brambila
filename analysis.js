@@ -81,11 +81,12 @@
           const m = line.match(/score (cp|mate) (-?\d+)/);
           if (!m) return;
           const mp = line.match(/multipv (\d+)/);
-          const pv = line.match(/ pv (\S+)/);
+          const pv = line.match(/ pv (.+)$/);
           const n = parseInt(m[2], 10);
           let v = m[1] === "cp" ? n : (n > 0 ? 1 : -1) * (MATE - Math.abs(n) * 10);
           if (cur.stm === "b") v = -v; // sempre do ponto de vista das brancas
-          cur.lines[mp ? parseInt(mp[1], 10) : 1] = { score: v, move: pv ? pv[1] : null };
+          const pvList = pv ? pv[1].trim().split(/\s+/) : [];
+          cur.lines[mp ? parseInt(mp[1], 10) : 1] = { score: v, move: pvList[0] || null, pv: pvList };
         } else if (line.startsWith("bestmove")) {
           const c = cur;
           cur = null;
@@ -128,6 +129,59 @@
     return s;
   }
 
+  const uciMove = (u) => ({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u.slice(4, 5) || undefined });
+
+  /* Busca de capturas (quiescência): resolve as trocas pendentes e devolve o saldo de material
+     do lado que joga. score = material (lado a jogar − adversário) na posição atual. */
+  function quiesce(chess, score, alpha, beta, depth, budget) {
+    if (score >= beta) return score;
+    if (score > alpha) alpha = score;
+    if (depth === 0 || budget.n <= 0) return score;
+    const caps = chess.moves({ verbose: true }).filter((m) => m.captured);
+    caps.sort((a, b) => VAL[b.captured] * 10 - VAL[b.piece] - (VAL[a.captured] * 10 - VAL[a.piece]));
+    for (const m of caps) {
+      budget.n--;
+      const gain = VAL[m.captured] + (m.promotion ? VAL[m.promotion] - 1 : 0);
+      chess.move({ from: m.from, to: m.to, promotion: m.promotion });
+      const v = -quiesce(chess, -(score + gain), -beta, -alpha, depth - 1, budget);
+      chess.undo();
+      if (v >= beta) return v;
+      if (v > alpha) alpha = v;
+    }
+    return alpha;
+  }
+
+  /* Quanto material o jogador perde DE FORMA DEFINITIVA depois do lance?
+     Segue a linha do motor enquanto forem capturas e resolve as trocas restantes.
+     Devolve null se o adversário não responde capturando. */
+  function resolvedLoss(fenBefore, fenAfter, pv, mover) {
+    const start = matDiff(fenBefore, mover);
+    let cur = new Chess(fenAfter);
+    let first = null;
+    for (const u of pv || []) {
+      const probe = new Chess(cur.fen());
+      const r = probe.move(uciMove(u));
+      if (!r || !r.captured) break;
+      if (!first) first = r;
+      cur = probe;
+    }
+    if (!first) return null;
+    const side = cur.turn();
+    const q = quiesce(cur, matDiff(cur.fen(), side), -99, 99, 8, { n: 600 });
+    return { first, lost: start - (side === mover ? q : -q) };
+  }
+
+  /* Sacrifício de verdade: a peça que acabou de se mover é capturada, a troca não se
+     compensa em material (≥ 2 pontos) e o lance não é roque nem promoção. */
+  function sacrificeSize(fenBefore, fenAfter, pv, mover, info) {
+    if (/^O-O/.test(info.san) || info.promotion || !pv || !pv.length) return 0;
+    try {
+      const rl = resolvedLoss(fenBefore, fenAfter, pv, mover);
+      if (rl && rl.first.to === info.to && rl.lost >= 2) return rl.lost;
+    } catch (e) {}
+    return 0;
+  }
+
   function sanOf(fen, uci) {
     if (!uci) return null;
     try {
@@ -161,16 +215,12 @@
 
       const bestish = isBest || loss <= 2;
 
-      // Sacrifício: o motor responde capturando e o jogador fica pelo menos 2 pontos atrás no material
-      let sac = false;
+      // Brilhante: sacrifício real (peça movida perdida sem compensação em material) que o motor aprova
+      let sacrificed = 0;
       if (bestish && pa.best && wpB < 85) {
-        try {
-          const t = new Chess(fens[i + 1]);
-          const rr = t.move({ from: pa.best.slice(0, 2), to: pa.best.slice(2, 4), promotion: pa.best.slice(4, 5) || undefined });
-          if (rr && rr.captured) sac = matDiff(t.fen(), mover) <= matDiff(fens[i], mover) - 2;
-        } catch (e) {}
+        sacrificed = sacrificeSize(fens[i], fens[i + 1], pa.lines[1] && pa.lines[1].pv, mover, info);
       }
-      const brilliant = sac && wpB - loss >= 45;
+      const brilliant = sacrificed >= 2 && wpB - loss >= 45;
 
       // Ótimo: lance único (ou quase) que a segunda melhor opção não alcança
       let great = false;
@@ -204,6 +254,7 @@
         cat,
         loss,
         acc,
+        sacrificed: brilliant ? sacrificed : 0,
         bestUci: pb.best,
         bestSan: sanOf(fens[i], pb.best),
         evalBefore: pb.score,
@@ -537,7 +588,11 @@
       '<div class="d-head"><span class="mini big" style="background:' + cat.color + ";color:" + cat.fg + '">' + cat.sym + "</span><div>" +
       '<div class="d-title">' + num + " " + esc(m.san) + " — " + cat.label + "</div>" +
       '<div class="d-sub">' + (mine ? "Seu lance" : "Lance do " + esc(B.CONFIG.BOT_NAME)) + " · avaliação " + "<b>" + B.fmtScore(m.evalAfter) + "</b></div>" +
-      "</div></div><p>" + cat.desc + "</p>";
+      "</div></div><p>" +
+      (m.cat === "brilliant" && m.sacrificed
+        ? "Sacrifício brilhante! Abre mão de " + m.sacrificed + " ponto(s) de material, e o motor confirma que vale a pena."
+        : cat.desc) +
+      "</p>";
 
     if (m.cat === "book") {
       const note = B.OPENINGS[state.moves.slice(0, k + 1).map((x) => x.san).join(" ")];
